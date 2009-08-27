@@ -81,7 +81,7 @@ for model_class in model_classes:
         entity = createEntity(row)
         entities.append(entity)
                 
-        text = StringIO()
+    text = StringIO()
 	
     simplejson.dump(entities,text,default=default,ensure_ascii=False)
 

@@ -70,21 +70,45 @@ class GaeApp:
     
     def upload_model(self,model_class,result):
         from google.appengine.ext import db
+        from ragendja.dbutils import KeyListProperty
         
-        def adjustEntity(entity):
+        def id_or_name(kind,value):
+            ret = None
+            try:
+                id = int(value)
+                ret = db.Key.from_path(kind , id)
+            except ValueError:
+                ret = db.Key.from_path(kind,value) 
+            return ret
+        
+        def convert(entity):
+            ret = {}
             for prop in model_class.properties().values():
 
                 if isinstance(prop,db.GeoPtProperty):
                     if prop.name in entity:
                         field = u",".join([str(v) for v in entity[prop.name]])
                         entity[prop.name] = field
-                #elif isinstance(prop,db.ReferenceProperty):
-                    #if prop.name in entity:
-                        #try:
-                            #id = int(entity[prop.name])
-                            #entity[prop.name] = db.Key.from_path(model_class , id)
-                        #except ValueError:
-                            #entity[prop.name] = db.Key.from_path(model_class ,entity[prop.name] )
+                elif isinstance(prop,db.ReferenceProperty):
+                    if prop.name in entity:
+                        try:
+                            entity[prop.name] = id_or_name(prop.reference_class.kind(),entity[prop.name])
+                        except TypeError:
+                            del entity[prop.name]
+                elif isinstance(prop,KeyListProperty):
+                    items = []
+                    for key in entity[prop.name]:
+                        items.append(id_or_name(prop.reference_class.kind(),key))
+                        
+                    entity[prop.name] = items
+                            
+                if prop.name in entity and entity[prop.name] == None:
+                    del entity[prop.name]
+                    
+            for key in entity:
+                ret[str(key)] = entity[key]
+                
+            return ret
     
         save = []
         for entity in result:
@@ -98,15 +122,8 @@ class GaeApp:
                 id = entity ["id"]
                 del entity["id"]
                 
-            adjustEntity(entity)
-            
-            object = model_class(id = id , key_name = key_name)
-            for key in entity:
-                try:
-                    setattr(object,key,entity[key])
-                except AttributeError,e:
-                    print entity
-                    raise e
+            ret = convert(entity)
+            object = model_class(id = id , key_name = key_name,**ret)
             
             save.append(object)
             
