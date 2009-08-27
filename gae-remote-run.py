@@ -4,7 +4,7 @@
 
 from optparse import make_option, OptionParser
 import sys
-from gaeapp import GaeApp
+from GaeApp import GaeApp
 
 option_list = [
     make_option("-d", "--debug",
@@ -28,5 +28,7 @@ app = GaeApp(args[0])
 app.load()
 
 app.connect(debug = options.debug,url=options.url,email = options.email)
+
+print "Connected to %s at %s" % (app.app_id,app.host)
 
 __import__(util)

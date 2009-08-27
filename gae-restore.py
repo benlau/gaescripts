@@ -1,12 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Backup from server
+# Restore date to server
 
 import time
 import codecs
-
-timestamp = time.strftime("%Y-%m-%d-%H:%M", time.localtime());
 
 from optparse import make_option, OptionParser
 import sys
@@ -23,11 +21,17 @@ option_list = [
         action="store", type="string", dest="email"),                         
 ]
 
-parser = OptionParser(option_list = option_list,usage="usage: gae-backup <application root>")
+parser = OptionParser(option_list = option_list,usage="usage: gae-restore <application root> <backup folder>")
 (options , args ) = parser.parse_args()
 
-if len(args) != 1:
+if len(args) != 2:
     parser.print_help()
+    sys.exit(0)
+
+backup_folder = args[1]
+
+if not os.path.exists(backup_folder):
+    print "The folder %s is not existed." % backup_folder
     sys.exit(0)
 
 app = GaeApp(args[0])
@@ -35,8 +39,9 @@ app = GaeApp(args[0])
 app.load()
 
 app.connect(debug = options.debug,url=options.url,email = options.email)
-
 print "Connected to %s at %s" % (app.app_id,app.host)
+
+
 
 from django.conf import settings
 from google.appengine.ext import db
@@ -54,39 +59,17 @@ for entry in GAE_BACKUP_MODELS:
     __import__(entry[0])
     for model in entry[1]:
         model_classes.append( db._kind_map[model] )
-
-if os.path.exists(timestamp):
-    print "The path %s is existed. " % timestamp
-    sys.exit(0)
-
-os.mkdir(timestamp)
-
-def default(o):
-	"""
-	``default(obj)`` is a function that should return a serializable version
-    of obj or raise TypeError for JSON generation
-    """
-
-	if isinstance(o,db.GeoPt):
-		return (o.lat,o.lon)
-	elif isinstance(o,db.Key):
-		return o.name()
-	else:
-		raise TypeError("%r is not JSON serializable" % (o,))
+ 
   
 for model_class in model_classes:
-    result = app.download_model(model_class)
-    entities = []
-    for row in result:
-        entity = createEntity(row)
-        entities.append(entity)
-                
-        text = StringIO()
-	
-    simplejson.dump(entities,text,default=default,ensure_ascii=False)
-
-    filename = timestamp + "/%s.json" % model_class.kind()
-    print "Writing changes to %s" % filename
-    file = codecs.open(filename ,"wt","utf-8")
-    file.write(text.getvalue())
+    filename = backup_folder + "/%s.json" % model_class.kind()
+    print "Loading %s " % filename
+    file = codecs.open(filename ,"rt","utf-8")
+    data=""
+    for line in file:
+        data+=line
+    result = simplejson.loads(data)
+        
     file.close()
+    
+    app.upload_model(model_class,result)
