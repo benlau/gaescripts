@@ -18,12 +18,14 @@ option_list = [
 parser = OptionParser(option_list = option_list,usage="usage: gae-remote-run <application root> module")
 (options , args ) = parser.parse_args()
 
-if len(args) != 2:
+if len(args) < 2:
     parser.print_help()
     sys.exit(0)
 
 util = args[1]
 app = GaeApp(args[0])
+args.pop(0)
+args.pop(0)
 
 app.load()
 
@@ -31,4 +33,7 @@ app.connect(debug = options.debug,url=options.url,email = options.email)
 
 print "Connected to %s at %s" % (app.app_id,app.host)
 
-__import__(util)
+script = __import__(util)
+
+if hasattr(script,"run"):
+    script.run(*args)

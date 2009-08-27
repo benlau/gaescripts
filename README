@@ -1,0 +1,88 @@
+GAE Scripts (Google App Engine Scripts)
+====================================================
+
+A collection of scripts for GAE application maintenance
+
+Released under the GNU GPL v3 License. See license.txt for the full license or read it here:
+http://www.gnu.org/licenses/gpl-3.0-standalone.html
+
+Features
+=========
+- Script loader , load and run script on remote server
+- Backup and restore
+
+
+=========================
+# Backup and Restore #
+=========================
+
+Configure your project to use gae-backup
+=============================================
+
+Modify settings.py
+
+- Modify settings.py to add GAE_BACKUP_MODELS ( tuple of models 
+that will be backed) to your application:
+
+Example:
+
+GAE_BACKUP_MODELS = (
+    (
+          'app1.models', 
+          ('app1_model1'.'app1_model2',),
+     ),
+     (
+          'app2.models', 
+          ('app2.model1',),
+     ),
+)
+
+Backup
+===========
+
+Run:
+
+ ./gae-backup <application root>
+ 
+ Options:
+  -d, --debug           
+  -u URL, --url=URL     
+  -e EMAIL, --email=EMAIL
+  -h, --help            show this help message and exit
+
+Example:
+
+# Backup development server on localhost 8000
+
+./gae-backup -d  path_to_your_gae_app 
+
+# Backup development server on localhost 8080
+
+./gae-backup -d http://localhost:8080 path_to_your_gae_app 
+
+# Backup deployment server 
+
+./gae-backup path_to_your_gae_app 
+
+Restore
+=============
+
+./gae-restore.py path_to_your_gae_app backup_folder
+
+Example
+
+./gae-restore.py -d  path_to_your_gae_app 2009-08-27-21:45
+
+
+
+Script Laoder
+==================
+
+gae-remote-run is a program that could connect to a GAE server,
+and load another script for any processing.
+
+Example (remove app1_model1 and app1_model2 from database):
+
+./gae-remote-run.py -d path_to_your_gae_app drop_tables app1.models app1_model1 app1_model2
+
+# drop_tables is a script that will clear all the entry of assigned models. 
