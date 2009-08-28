@@ -126,54 +126,8 @@ class GaeApp:
     
     def upload_model(self,model_class,result):
         from google.appengine.ext import db
-        from ragendja.dbutils import KeyListProperty
-        from google.appengine.api.users import User
-        
-        def id_or_name(kind,value):
-            ret = None
-            try:
-                id = int(value)
-                ret = db.Key.from_path(kind , id)
-            except ValueError:
-                ret = db.Key.from_path(kind,value) 
-            return ret
-        
-        def convert(entity):
-            ret = {}
-            for prop in model_class.properties().values():
-                if not prop.name in entity:
-                    continue
-
-                if isinstance(prop,db.GeoPtProperty):
-                    field = u",".join([str(v) for v in entity[prop.name]])
-                    entity[prop.name] = field
-                elif isinstance(prop,db.ReferenceProperty):
-                    if prop.reference_class == db.Model:
-                        entity[prop.name] = db.Key(encoded = entity[prop.name])
-                    else:
-                        try:
-                            entity[prop.name] = id_or_name(prop.reference_class.kind(),entity[prop.name])
-                        except TypeError:
-                            del entity[prop.name]
-                elif isinstance(prop,KeyListProperty):
-                    items = []
-                    for key in entity[prop.name]:
-                        items.append(id_or_name(prop.reference_class.kind(),key))
-                        
-                    entity[prop.name] = items
-                elif isinstance(prop,db.UserProperty):
-                    entity[prop.name] = User(email = entity[prop.name])
-                elif isinstance(prop,db.DateTimeProperty):
-                    entity[prop.name] = datetime.datetime.fromtimestamp(entity[prop.name])
-                
-                if prop.name in entity and entity[prop.name] == None:
-                    del entity[prop.name]
+        from utils import fromJSON
                     
-            for key in entity:
-                ret[str(key)] = entity[key]
-                
-            return ret
-    
         save = []
         to_delete = []
         for entity in result:
@@ -189,10 +143,9 @@ class GaeApp:
             
             #if not key:
                 #print "No key assigned with record:"
-                #print entity
-                
-            ret = convert(entity)
-            object = model_class(**ret)
+                #print entity               
+
+            object = fromJSON(model_class , entity)
             
             save.append(object)
             

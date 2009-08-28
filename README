@@ -80,14 +80,15 @@ Working Theory
 ============================
 
 As GAE do not support to assign data entry with numeric ID, the 
-ID is generated utomatically. Therefore, if entry is backed with 
+ID is generated automatically. Therefore, if entry is backed with 
 ID field, it won't be able to restore the record to the same key
 unless the original record is existed. But it will fail if it 
 is going to restore to a flash application.
 
 In order to overcome the problem, gae-backup will replace numeric
 ID to key started with "_" (e.g , ID with 2673 will be converted
-to "_2673" ). The reference from other model will also be updated
+to "_2673" ). The reference from other model will also be updated.
+That mean you may get a different database after restoration.
 
 
 Script Laoder
