@@ -148,10 +148,13 @@ class GaeApp:
                     field = u",".join([str(v) for v in entity[prop.name]])
                     entity[prop.name] = field
                 elif isinstance(prop,db.ReferenceProperty):
-                    try:
-                        entity[prop.name] = id_or_name(prop.reference_class.kind(),entity[prop.name])
-                    except TypeError:
-                        del entity[prop.name]
+                    if prop.reference_class == db.Model:
+                        entity[prop.name] = db.Key(encoded = entity[prop.name])
+                    else:
+                        try:
+                            entity[prop.name] = id_or_name(prop.reference_class.kind(),entity[prop.name])
+                        except TypeError:
+                            del entity[prop.name]
                 elif isinstance(prop,KeyListProperty):
                     items = []
                     for key in entity[prop.name]:

@@ -5,7 +5,7 @@ def createEntity(object):
     """  Create an entity from model instance object which is 
     suitable for data import and export. 
 
-    Opertions:
+    Operations:
     - Convert all ReferenceProperty to the key_name/key
     """
     entity = {}
@@ -17,7 +17,10 @@ def createEntity(object):
             
             if isinstance(prop,db.ReferenceProperty):
                 if datastore_value:
-                    entity[prop.name] = datastore_value.id_or_name()
+                    if prop.reference_class != db.Model:
+                        entity[prop.name] = datastore_value.id_or_name()
+                    else:
+                        entity[prop.name] = str(datastore_value)
 
     if object.key().has_id_or_name():
         if object.key().id() != None:
