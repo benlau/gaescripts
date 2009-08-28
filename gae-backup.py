@@ -15,26 +15,15 @@ import os
 from StringIO import StringIO
 
 option_list = [
-    make_option("-d", "--debug",
-        action="store_true",  dest="debug",default=False),
-    make_option("-u", "--url",
-        action="store", type="string", dest="url",default="localhost:8000"),                    
-    make_option("-e", "--email",
-        action="store", type="string", dest="email"),                         
     make_option("-o", "--output",
         help="The output path of backup.",
         default = None,
         action="store", type="string", dest="output"),                             
 ]
 
-parser = OptionParser(option_list = option_list,usage="usage: gae-backup <application root>")
-(options , args ) = parser.parse_args()
-
-if len(args) != 1:
-    parser.print_help()
-    sys.exit(0)
-
-app = GaeApp(args[0])
+app = GaeApp(name="gae-backup.py")
+app.add_options(option_list)
+options = app.parse()
 
 app.load()
 

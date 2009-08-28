@@ -3,11 +3,58 @@
 import sys
 import os
 import getpass
+from optparse import make_option, OptionParser
 
 class GaeApp:
-    def __init__(self,path = None):
-        self.basepath = os.path.abspath(path)
+    def __init__(self,path = None , name = None):
+        self.basepath = None
+        
+        if path:
+            self.basepath = os.path.abspath(path)
         self.app_id = None
+        self.name = name
+        self.usage = None
+        
+        self.option_list = [
+            make_option("-d", "--debug",
+                action="store_true",  dest="debug",default=False),
+            make_option("-u", "--url",
+                action="store", type="string", dest="url",default="localhost:8000"),                    
+            make_option("-e", "--email",
+                action="store", type="string", dest="email"),                         
+                
+        ]
+        
+    def add_options(self,options):
+        """
+        Add options for parse function()
+        """
+        
+        if isinstance(options,list):
+            for opt in options:
+                self.option_list.append(opt)
+        else:
+            self.option_list.append(options)
+            
+    def set_usage(self,usage):
+        self.usage = usage
+            
+    def parse(self):      
+        if not self.usage:
+            usage = "usage : %s <application root>" % self.name
+        else:
+            usage = self.usage
+            
+        parser = OptionParser(option_list = self.option_list,usage=usage)
+        (options , args ) = parser.parse_args()
+        
+        try:
+            self.basepath = os.path.abspath(args[0])
+        except:
+            parser.print_help()
+            sys.exit(0)
+            
+        return options
 
     def load(self):
         """
