@@ -3,6 +3,7 @@
 import sys
 import os
 import getpass
+import datetime
 from optparse import make_option, OptionParser
 
 class GaeApp:
@@ -47,14 +48,22 @@ class GaeApp:
             
         parser = OptionParser(option_list = self.option_list,usage=usage)
         (options , args ) = parser.parse_args()
-        
+        self.options = options
+        self.parser = parser
         try:
             self.basepath = os.path.abspath(args[0])
         except:
             parser.print_help()
             sys.exit(0)
             
-        return options
+        if self.options.debug:
+            if "AUTH_DOMAIN" not in os.environ:
+                os.environ["AUTH_DOMAIN"] = "example.com"
+            
+        return options,args
+    
+    def help():
+        self.parser.print_help()
 
     def load(self):
         """
@@ -118,6 +127,7 @@ class GaeApp:
     def upload_model(self,model_class,result):
         from google.appengine.ext import db
         from ragendja.dbutils import KeyListProperty
+        from google.appengine.api.users import User
         
         def id_or_name(kind,value):
             ret = None
@@ -131,24 +141,28 @@ class GaeApp:
         def convert(entity):
             ret = {}
             for prop in model_class.properties().values():
+                if not prop.name in entity:
+                    continue
 
                 if isinstance(prop,db.GeoPtProperty):
-                    if prop.name in entity:
-                        field = u",".join([str(v) for v in entity[prop.name]])
-                        entity[prop.name] = field
+                    field = u",".join([str(v) for v in entity[prop.name]])
+                    entity[prop.name] = field
                 elif isinstance(prop,db.ReferenceProperty):
-                    if prop.name in entity:
-                        try:
-                            entity[prop.name] = id_or_name(prop.reference_class.kind(),entity[prop.name])
-                        except TypeError:
-                            del entity[prop.name]
+                    try:
+                        entity[prop.name] = id_or_name(prop.reference_class.kind(),entity[prop.name])
+                    except TypeError:
+                        del entity[prop.name]
                 elif isinstance(prop,KeyListProperty):
                     items = []
                     for key in entity[prop.name]:
                         items.append(id_or_name(prop.reference_class.kind(),key))
                         
                     entity[prop.name] = items
-                            
+                elif isinstance(prop,db.UserProperty):
+                    entity[prop.name] = User(email = entity[prop.name])
+                elif isinstance(prop,db.DateTimeProperty):
+                    entity[prop.name] = datetime.datetime.fromtimestamp(entity[prop.name])
+                
                 if prop.name in entity and entity[prop.name] == None:
                     del entity[prop.name]
                     

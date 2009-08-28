@@ -12,20 +12,12 @@ from GaeApp import GaeApp
 import os
 from StringIO import StringIO
 
-option_list = [
-    make_option("-d", "--debug",
-        action="store_true",  dest="debug",default=False),
-    make_option("-u", "--url",
-        action="store", type="string", dest="url",default="localhost:8000"),                    
-    make_option("-e", "--email",
-        action="store", type="string", dest="email"),                         
-]
+app = GaeApp(name="gae-restore")
 
-parser = OptionParser(option_list = option_list,usage="usage: gae-restore <application root> <backup folder>")
-(options , args ) = parser.parse_args()
+(options,args) = app.parse()
 
 if len(args) != 2:
-    parser.print_help()
+    app.help()
     sys.exit(0)
 
 backup_folder = args[1]
@@ -34,7 +26,6 @@ if not os.path.exists(backup_folder):
     print "The folder %s is not existed." % backup_folder
     sys.exit(0)
 
-app = GaeApp(args[0])
 
 app.load()
 

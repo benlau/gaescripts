@@ -5,6 +5,7 @@
 
 import time
 import codecs
+import datetime
 
 timestamp = time.strftime("%Y-%m-%d-%H:%M", time.localtime());
 
@@ -23,7 +24,7 @@ option_list = [
 
 app = GaeApp(name="gae-backup.py")
 app.add_options(option_list)
-options = app.parse()
+(options,args) = app.parse()
 
 app.load()
 
@@ -35,6 +36,7 @@ from django.conf import settings
 from google.appengine.ext import db
 from utils import createEntity
 from django.utils import simplejson
+from google.appengine.api.users import User
 
 if not hasattr(settings , 'GAE_BACKUP_MODELS'):
     print 'GAE_BACKUP_MODELS is not defined' 
@@ -58,19 +60,25 @@ if not os.path.exists(output_path):
     os.mkdir(output_path)
 
 def default(o):
-	"""
-	``default(obj)`` is a function that should return a serializable version
+    """
+    ``default(obj)`` is a function that should return a serializable version
     of obj or raise TypeError for JSON generation
     """
 
-	if isinstance(o,db.GeoPt):
-		return (o.lat,o.lon)
-	elif isinstance(o,db.Key):
-		return o.name()
-	else:
-		raise TypeError("%r is not JSON serializable" % (o,))
+    if isinstance(o,db.GeoPt):
+        return (o.lat,o.lon)
+    elif isinstance(o,db.Key):
+        return o.id_or_name()
+    elif isinstance(o,User):
+        return o.email()        
+    elif isinstance(o,datetime.datetime):
+        return time.mktime(o.timetuple())
+    else:
+        raise TypeError("%r is not JSON serializable" % (o,))
   
 for model_class in model_classes:
+    filename = output_path + "/%s.json" % model_class.kind()
+    print "Saving changes to %s" % filename    
     result = app.download_model(model_class)
     entities = []
     for row in result:
@@ -81,8 +89,6 @@ for model_class in model_classes:
 	
     simplejson.dump(entities,text,default=default,ensure_ascii=False,indent =1)
 
-    filename = output_path + "/%s.json" % model_class.kind()
-    print "Writing changes to %s" % filename
     file = codecs.open(filename ,"wt","utf-8")
     file.write(text.getvalue())
     file.close()
