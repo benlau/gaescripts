@@ -175,22 +175,35 @@ class GaeApp:
             return ret
     
         save = []
+        to_delete = []
         for entity in result:
-            key_name = None
-            if "key_name" in entity:
-                key_name = entity["key_name"]
-                del entity["key_name"]
-                
+                            
             id = None
             if "id" in entity:
                 id = entity ["id"]
                 del entity["id"]
+                existing_entry = model_class.get(db.Key.from_path(model_class.kind(),id))
+                if existing_entry:
+                    to_delete.append(existing_entry)
+                entity["key_name"] = "_" + str(id)
+            
+            #if not key:
+                #print "No key assigned with record:"
+                #print entity
                 
             ret = convert(entity)
-            object = model_class(id = id , key_name = key_name,**ret)
+            object = model_class(**ret)
             
             save.append(object)
             
+            if len(to_delete) > 100:
+                db.delete(to_delete)
+                to_delete = []
+            if len(save) > 100:
+                db.put(save)
+                save = []
+        
+        db.delete(to_delete)    
         db.put(save)
         
     

@@ -18,7 +18,12 @@ def createEntity(object):
             if isinstance(prop,db.ReferenceProperty):
                 if datastore_value:
                     if prop.reference_class != db.Model:
-                        entity[prop.name] = datastore_value.id_or_name()
+                        
+                        if datastore_value.id():
+                            key_name = "_" + str(datastore_value.id())
+                        else:
+                            key_name = datastore_value.name()
+                        entity[prop.name] = key_name
                     else:
                         entity[prop.name] = str(datastore_value)
 
