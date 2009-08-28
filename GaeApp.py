@@ -5,7 +5,7 @@ import os
 import getpass
 
 class GaeApp:
-    def __init__(self,path):
+    def __init__(self,path = None):
         self.basepath = os.path.abspath(path)
         self.app_id = None
 

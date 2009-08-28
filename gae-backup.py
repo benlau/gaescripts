@@ -21,6 +21,10 @@ option_list = [
         action="store", type="string", dest="url",default="localhost:8000"),                    
     make_option("-e", "--email",
         action="store", type="string", dest="email"),                         
+    make_option("-o", "--output",
+        help="The output path of backup.",
+        default = None,
+        action="store", type="string", dest="output"),                             
 ]
 
 parser = OptionParser(option_list = option_list,usage="usage: gae-backup <application root>")
@@ -55,11 +59,14 @@ for entry in GAE_BACKUP_MODELS:
     for model in entry[1]:
         model_classes.append( db._kind_map[model] )
 
-if os.path.exists(timestamp):
-    print "The path %s is existed. " % timestamp
-    sys.exit(0)
 
-os.mkdir(timestamp)
+if options.output:
+    output_path = options.output
+else:
+    output_path = timestamp
+
+if not os.path.exists(output_path):
+    os.mkdir(output_path)
 
 def default(o):
 	"""
@@ -83,9 +90,9 @@ for model_class in model_classes:
                 
     text = StringIO()
 	
-    simplejson.dump(entities,text,default=default,ensure_ascii=False)
+    simplejson.dump(entities,text,default=default,ensure_ascii=False,indent =1)
 
-    filename = timestamp + "/%s.json" % model_class.kind()
+    filename = output_path + "/%s.json" % model_class.kind()
     print "Writing changes to %s" % filename
     file = codecs.open(filename ,"wt","utf-8")
     file.write(text.getvalue())
