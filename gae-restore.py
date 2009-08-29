@@ -66,6 +66,6 @@ for model_class in model_classes:
         
         app.upload_model(model_class,result)
     except IOError:
-        print "IOError. Skipped" % filename
+        print "IOError. Skipped"
     
     

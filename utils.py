@@ -1,8 +1,26 @@
 # -*- coding: utf-8 -*-
 from google.appengine.ext import db
+from google.appengine.api import datastore_types
 import datetime
 
 id_prefix = "_"
+
+def resolve_key(key_data,reference_class):
+    """
+    Resolve the key and create key instance
+    """
+    
+    if isinstance(key_data, list):
+        return db.Key.from_path(*key_data)
+    elif isinstance(key_data, basestring):
+        try:
+            return db.Key(key_data) #Encoded data
+        except datastore_types.datastore_errors.BadKeyError, e:
+            if reference_class == db.Model:
+                print "Warning! Invalid Reference."
+                print entity
+            else:
+                return db.Key.from_path(reference_class.kind(),key_data)   
 
 def createEntity(object):
     """  Create an entity from model instance object which is 
@@ -42,15 +60,6 @@ def createEntity(object):
 
     return entity
 
-def id_or_name(kind,value):
-    ret = None
-    try:
-        id = int(value)
-        ret = db.Key.from_path(kind , id)
-    except ValueError:
-        ret = db.Key.from_path(kind,value) 
-    return ret
-
 def deserialize(model_class,entity):
     """
     Create a model instance from json
@@ -73,22 +82,15 @@ def deserialize(model_class,entity):
         if isinstance(prop,db.GeoPtProperty):
             field = u",".join([str(v) for v in entity[prop.name]])
             entity[prop.name] = field
+            
         elif isinstance(prop,db.ReferenceProperty):
-            if prop.reference_class == db.Model:
-                #FIXME! gae-restore can not handle if the reference instance own a numeric id
-                entity[prop.name] = db.Key(encoded = entity[prop.name])
-                if entity[prop.name].name() == None and entity[prop.name].id() == None:
-                    print "Warning! Invalid key"
-                    print entity
-            else:
-                try:
-                    entity[prop.name] = id_or_name(prop.reference_class.kind(),entity[prop.name])
-                except TypeError:
-                    del entity[prop.name]
+            
+            entity[prop.name] = resolve_key(entity[prop.name] , prop.reference_class)
+
         elif isinstance(prop,KeyListProperty):
             items = []
             for key in entity[prop.name]:
-                items.append(id_or_name(prop.reference_class.kind(),key))
+                items.append(resolve_key(key,prop.reference_class))
                 
             entity[prop.name] = items
         elif isinstance(prop,db.UserProperty):
@@ -102,7 +104,7 @@ def deserialize(model_class,entity):
     ret = {}        
     for key in entity: #Convert unicode key to str key
         ret[str(key)] = entity[key]
-        
+
     object = model_class(**ret)
         
     return object
