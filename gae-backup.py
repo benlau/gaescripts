@@ -34,7 +34,7 @@ print "Connected to %s at %s" % (app.app_id,app.host)
 
 from django.conf import settings
 from google.appengine.ext import db
-from utils import createEntity
+from utils import serialize
 from django.utils import simplejson
 from google.appengine.api.users import User
 
@@ -65,16 +65,10 @@ def default(o):
     of obj or raise TypeError for JSON generation
     """
 
-    if isinstance(o,db.GeoPt):
-        return (o.lat,o.lon)
-    elif isinstance(o,db.Key):
+    if isinstance(o,db.Key):
         return o.id_or_name()
-    elif isinstance(o,User):
-        return o.email()        
-    elif isinstance(o,datetime.datetime):
-        return time.mktime(o.timetuple())
     else:
-        raise TypeError("%r is not JSON serializable" % (o,))
+        raise TypeError("%r is not JSON serializable" % (o,))   
   
 for model_class in model_classes:
     filename = output_path + "/%s.json" % model_class.kind()
@@ -82,7 +76,7 @@ for model_class in model_classes:
     result = app.download_model(model_class)
     entities = []
     for row in result:
-        entity = createEntity(row)
+        entity = serialize(row)
         entities.append(entity)
                 
     text = StringIO()

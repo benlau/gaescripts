@@ -41,9 +41,9 @@ def encode_key(key,reference_class,field):
             key = db.Key.from_path( key.kind() , key_name )
             return str(key)
 
-def createEntity(object):
-    """  Create an entity from model instance object which is 
-    suitable for data import and export. 
+def serialize(object):
+    """ 
+    Serialize a model instance to basic Python object
 
     Operations:
     - Convert all ReferenceProperty to the key_name/key
@@ -54,19 +54,23 @@ def createEntity(object):
         datastore_value = prop.get_value_for_datastore(object)
         if datastore_value == None:
             continue
-        if not datastore_value == []:
-            entity[prop.name] = datastore_value
-            
-            if isinstance(prop,db.ReferenceProperty):
-                entity[prop.name] = encode_key(datastore_value,prop.reference_class,prop.name)
+        
+        entity[prop.name] = datastore_value
+        
+        if isinstance(prop,db.ReferenceProperty):
+            entity[prop.name] = encode_key(datastore_value,prop.reference_class,prop.name)
+        elif isinstance(prop,db.GeoPtProperty):
+            entity[prop.name] = (datastore_value.lat,datastore_value.lon)
+        elif isinstance(prop,db.UserProperty):
+            entity[prop.name] = datastore_value.email()
+        elif isinstance(datastore_value,db.DateTimeProperty):
+            entity[prop.name] = time.mktime(datastore_value.timetuple())  
 
-    if object.key().has_id_or_name():
-        if object.key().id() != None:
-            entity['id'] = object.key().id()
-        else:
-            entity['key_name'] = object.key().name()
+    if object.key().id() != None:
+        entity['id'] = object.key().id()
     else:
-        entity['key'] = object.key()
+        entity['key_name'] = object.key().name()
+
 
     return entity
 

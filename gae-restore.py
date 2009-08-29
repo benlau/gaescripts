@@ -36,7 +36,6 @@ print "Connected to %s at %s" % (app.app_id,app.host)
 
 from django.conf import settings
 from google.appengine.ext import db
-from utils import createEntity
 from django.utils import simplejson
 
 if not hasattr(settings , 'GAE_BACKUP_MODELS'):
