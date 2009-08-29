@@ -10,7 +10,7 @@ def resolve_key(key_data,reference_class):
     Resolve the key and create key instance
     """
     
-    if isinstance(key_data, list):
+    if isinstance(key_data, list): # If it is a path
         return db.Key.from_path(*key_data)
     elif isinstance(key_data, basestring):
         try:
@@ -21,6 +21,25 @@ def resolve_key(key_data,reference_class):
                 print entity
             else:
                 return db.Key.from_path(reference_class.kind(),key_data)   
+
+def encode_key(key,reference_class,field):
+    """
+    Encode a key for JSON output
+    """
+    if key.id():
+        print "Warning! Field %s is referred to an entity with numeric ID(%d)" % (field , key.id())
+        key_name = id_prefix + str(key.id())
+    else:
+        key_name = key.name()
+
+    if reference_class != db.Model:
+        return key_name
+    else:
+        if key.id() == None:
+            return str(key)
+        else:
+            key = db.Key.from_path( key.kind() , key_name )
+            return str(key)
 
 def createEntity(object):
     """  Create an entity from model instance object which is 
@@ -39,16 +58,7 @@ def createEntity(object):
             entity[prop.name] = datastore_value
             
             if isinstance(prop,db.ReferenceProperty):
-                if datastore_value:
-                    if prop.reference_class != db.Model:
-                        
-                        if datastore_value.id():
-                            key_name = "_" + str(datastore_value.id())
-                        else:
-                            key_name = datastore_value.name()
-                        entity[prop.name] = key_name
-                    else:
-                        entity[prop.name] = str(datastore_value)
+                entity[prop.name] = encode_key(datastore_value,prop.reference_class,prop.name)
 
     if object.key().has_id_or_name():
         if object.key().id() != None:
