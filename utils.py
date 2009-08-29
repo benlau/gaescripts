@@ -13,6 +13,8 @@ def createEntity(object):
 
     for prop in object.properties().values():
         datastore_value = prop.get_value_for_datastore(object)
+        if datastore_value == None:
+            continue
         if not datastore_value == []:
             entity[prop.name] = datastore_value
             
@@ -64,7 +66,11 @@ def fromJSON(model_class,entity):
             entity[prop.name] = field
         elif isinstance(prop,db.ReferenceProperty):
             if prop.reference_class == db.Model:
+                #FIXME! gae-restore can not handle if the reference instance own a numeric id
                 entity[prop.name] = db.Key(encoded = entity[prop.name])
+                if entity[prop.name].name() == None and entity[prop.name].id() == None:
+                    print "Warning! Invalid key"
+                    print entity
             else:
                 try:
                     entity[prop.name] = id_or_name(prop.reference_class.kind(),entity[prop.name])

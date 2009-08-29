@@ -140,13 +140,10 @@ class GaeApp:
                 if existing_entry:
                     to_delete.append(existing_entry)
                 entity["key_name"] = "_" + str(id)
-            
-            #if not key:
-                #print "No key assigned with record:"
-                #print entity               
-
+                
+                
             object = fromJSON(model_class , entity)
-            
+                        
             save.append(object)
             
             if len(to_delete) > 100:
