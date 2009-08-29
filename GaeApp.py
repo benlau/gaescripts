@@ -126,23 +126,18 @@ class GaeApp:
     
     def upload_model(self,model_class,result):
         from google.appengine.ext import db
-        from utils import fromJSON
+        from utils import deserialize
                     
         save = []
         to_delete = []
         for entity in result:
                             
-            id = None
             if "id" in entity:
-                id = entity ["id"]
-                del entity["id"]
-                existing_entry = model_class.get(db.Key.from_path(model_class.kind(),id))
+                existing_entry = model_class.get(db.Key.from_path(model_class.kind(),entity ["id"]))
                 if existing_entry:
-                    to_delete.append(existing_entry)
-                entity["key_name"] = "_" + str(id)
+                    to_delete.append(existing_entry) # Remove the existing entry with numeric ID
                 
-                
-            object = fromJSON(model_class , entity)
+            object = deserialize(model_class , entity)
                         
             save.append(object)
             

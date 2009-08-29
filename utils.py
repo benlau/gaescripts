@@ -2,6 +2,8 @@
 from google.appengine.ext import db
 import datetime
 
+id_prefix = "_"
+
 def createEntity(object):
     """  Create an entity from model instance object which is 
     suitable for data import and export. 
@@ -10,7 +12,7 @@ def createEntity(object):
     - Convert all ReferenceProperty to the key_name/key
     """
     entity = {}
-
+    
     for prop in object.properties().values():
         datastore_value = prop.get_value_for_datastore(object)
         if datastore_value == None:
@@ -49,14 +51,21 @@ def id_or_name(kind,value):
         ret = db.Key.from_path(kind,value) 
     return ret
 
-def fromJSON(model_class,entity):
+def deserialize(model_class,entity):
     """
     Create a model instance from json
     """
     from google.appengine.ext import db
     from ragendja.dbutils import KeyListProperty
     from google.appengine.api.users import User    
-    ret = {}
+    
+    # GAE can not restore numeric ID entity
+    if "id" in entity:
+        id = entity ["id"]
+        del entity["id"]
+        entity["key_name"] = id_prefix + str(id)
+        print "Warning. The entity with ID %d will be renamed to %s. Old record will be removed." % (id,entity["key_name"])
+    
     for prop in model_class.properties().values():
         if not prop.name in entity:
             continue
@@ -89,7 +98,8 @@ def fromJSON(model_class,entity):
         
         if prop.name in entity and entity[prop.name] == None:
             del entity[prop.name]
-            
+    
+    ret = {}        
     for key in entity: #Convert unicode key to str key
         ret[str(key)] = entity[key]
         

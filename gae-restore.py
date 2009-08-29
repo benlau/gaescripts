@@ -55,12 +55,17 @@ for entry in GAE_BACKUP_MODELS:
 for model_class in model_classes:
     filename = backup_folder + "/%s.json" % model_class.kind()
     print "Loading %s " % filename
-    file = codecs.open(filename ,"rt","utf-8")
-    data=""
-    for line in file:
-        data+=line
-    result = simplejson.loads(data)
+    try:
+        file = codecs.open(filename ,"rt","utf-8")
+        data=""
+        for line in file:
+            data+=line
+        result = simplejson.loads(data)
+            
+        file.close()
         
-    file.close()
+        app.upload_model(model_class,result)
+    except IOError:
+        print "IOError. Skipped" % filename
     
-    app.upload_model(model_class,result)
+    
