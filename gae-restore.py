@@ -11,21 +11,16 @@ import sys
 from GaeApp import GaeApp
 import os
 from StringIO import StringIO
+import re
 
 app = GaeApp(name="gae-restore")
+app.set_usage("usage : %s <application root> <backup folder_or_file> ... " % app.name)
 
 (options,args) = app.parse()
 
-if len(args) != 2:
+if len(args) < 2:
     app.help()
     sys.exit(0)
-
-backup_folder = args[1]
-
-if not os.path.exists(backup_folder):
-    print "The folder %s is not existed." % backup_folder
-    sys.exit(0)
-
 
 app.load()
 
@@ -50,18 +45,31 @@ for entry in GAE_BACKUP_MODELS:
     __import__(entry[0])
     for model in entry[1]:
         model_classes.append( db._kind_map[model] )
- 
+
+args.pop(0)
   
-for model_class in model_classes:
-    filename = backup_folder + "/%s.json" % model_class.kind()
-    print "Loading %s " % filename
-    try:
+def restore(input):
+    if not os.path.exists(input):
+        print "Warning! %s is not existed." % input
+        return
+    if not os.path.isdir(input):
+        print "Loading %s" % input
         
-        file = BackupFile(filename)
+        file = BackupFile(input)
         result = file.load()
-                    
+        
+        model_class = file.get_model_class()        
+        print "Uploading data to %s..." % model_class.kind()
         app.upload_model(model_class,result)
-    except IOError:
-        print "IOError. Skipped"
+    else:
+        regexp = re.compile("^.*\.json$")
+        for file in os.listdir(input):
+            if regexp.match(file):
+                restore(input +"/" +file)
+  
+for input in args:
+    restore(input)
+
+  
     
     

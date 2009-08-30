@@ -141,9 +141,12 @@ class BackupFile:
     Backup file
     """
     
+    ver = 1
+    
     def __init__(self,filename=None,model_class = None):
         self.filename = filename
         self.model_class = model_class
+        self.model_kind = None
         
     def save(self,models):
         """
@@ -152,14 +155,20 @@ class BackupFile:
         @param models A list of model instance
         """
         from django.utils import simplejson
-        
+                
         entities = [serialize(m) for m in models]
+        
+        format = {
+            "ver" : BackupFile.ver,
+            "model_class" : self.model_class.kind(),
+            "data" : entities
+        }
         
         file = codecs.open(self.filename ,"wt","utf-8")
         
         text = StringIO()
 	
-        simplejson.dump(entities,text,default=default,ensure_ascii=False,indent =1)
+        simplejson.dump(format,text,default=default,ensure_ascii=False,indent =1)
         
         file.write(text.getvalue())
         file.close()
@@ -174,13 +183,21 @@ class BackupFile:
         data=""
         for line in file:
             data+=line
-        result = simplejson.loads(data)
+            
+        format = simplejson.loads(data)
+        
+        if format["ver"] != BackupFile.ver:
+            raise RuntimeError("Backup file version mismatched")
+            
+        self.model_kind = format["model_class"]
+        result = format["data"]
 
         file.close()
         
         return result
 
-
+    def get_model_class(self):
+        return db._kind_map[self.model_kind]
         
         
         

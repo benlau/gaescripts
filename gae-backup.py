@@ -72,5 +72,5 @@ for model_class in model_classes:
     print "Saving changes to %s" % filename    
     result = app.download_model(model_class)
     
-    file = BackupFile(filename = filename)
+    file = BackupFile(filename = filename, model_class = model_class)
     file.save(result)
