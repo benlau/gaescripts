@@ -34,7 +34,7 @@ print "Connected to %s at %s" % (app.app_id,app.host)
 
 from django.conf import settings
 from google.appengine.ext import db
-from utils import serialize
+from utils import BackupFile
 from django.utils import simplejson
 from google.appengine.api.users import User
 
@@ -48,7 +48,14 @@ model_classes = []
 for entry in GAE_BACKUP_MODELS:
     __import__(entry[0])
     for model in entry[1]:
-        model_classes.append( db._kind_map[model] )
+        try:
+            model_classes.append( db._kind_map[model] )
+
+        except KeyError , e:
+            print "%s not found." % model
+            print "Available models"
+            print [key for key in db._kind_map]
+            
 
 
 if options.output:
@@ -59,30 +66,11 @@ else:
 if not os.path.exists(output_path):
     os.mkdir(output_path)
 
-def default(o):
-    """
-    ``default(obj)`` is a function that should return a serializable version
-    of obj or raise TypeError for JSON generation
-    """
-
-    if isinstance(o,db.Key):
-        return o.id_or_name()
-    else:
-        raise TypeError("%r is not JSON serializable" % (o,))   
   
 for model_class in model_classes:
     filename = output_path + "/%s.json" % model_class.kind()
     print "Saving changes to %s" % filename    
     result = app.download_model(model_class)
-    entities = []
-    for row in result:
-        entity = serialize(row)
-        entities.append(entity)
-                
-    text = StringIO()
-	
-    simplejson.dump(entities,text,default=default,ensure_ascii=False,indent =1)
-
-    file = codecs.open(filename ,"wt","utf-8")
-    file.write(text.getvalue())
-    file.close()
+    
+    file = BackupFile(filename = filename)
+    file.save(result)

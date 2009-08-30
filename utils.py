@@ -3,7 +3,8 @@ from google.appengine.ext import db
 from google.appengine.api import datastore_types
 import datetime
 import time
-
+import codecs
+from StringIO import StringIO
 id_prefix = "_"
 
 def resolve_key(key_data,reference_class):
@@ -124,3 +125,64 @@ def deserialize(model_class,entity):
         
     return object
 
+def default(o):
+    """
+    ``default(obj)`` is a function that should return a serializable version
+    of obj or raise TypeError for JSON generation
+    """
+
+    if isinstance(o,db.Key):
+        return o.id_or_name()
+    else:
+        raise TypeError("%r is not JSON serializable" % (o,))   
+
+class BackupFile:
+    """
+    Backup file
+    """
+    
+    def __init__(self,filename=None,model_class = None):
+        self.filename = filename
+        self.model_class = model_class
+        
+    def save(self,models):
+        """
+        Save the file
+        
+        @param models A list of model instance
+        """
+        from django.utils import simplejson
+        
+        entities = [serialize(m) for m in models]
+        
+        file = codecs.open(self.filename ,"wt","utf-8")
+        
+        text = StringIO()
+	
+        simplejson.dump(entities,text,default=default,ensure_ascii=False,indent =1)
+        
+        file.write(text.getvalue())
+        file.close()
+        
+    def load(self):
+        """
+        JSON instance from file
+        """
+        from django.utils import simplejson
+        
+        file = codecs.open(self.filename ,"rt","utf-8")
+        data=""
+        for line in file:
+            data+=line
+        result = simplejson.loads(data)
+
+        file.close()
+        
+        return result
+
+
+        
+        
+        
+    
+    

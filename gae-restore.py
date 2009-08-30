@@ -37,6 +37,7 @@ print "Connected to %s at %s" % (app.app_id,app.host)
 from django.conf import settings
 from google.appengine.ext import db
 from django.utils import simplejson
+from utils import BackupFile
 
 if not hasattr(settings , 'GAE_BACKUP_MODELS'):
     print 'GAE_BACKUP_MODELS is not defined' 
@@ -55,14 +56,10 @@ for model_class in model_classes:
     filename = backup_folder + "/%s.json" % model_class.kind()
     print "Loading %s " % filename
     try:
-        file = codecs.open(filename ,"rt","utf-8")
-        data=""
-        for line in file:
-            data+=line
-        result = simplejson.loads(data)
-            
-        file.close()
         
+        file = BackupFile(filename)
+        result = file.load()
+                    
         app.upload_model(model_class,result)
     except IOError:
         print "IOError. Skipped"
