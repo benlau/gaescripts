@@ -4,6 +4,7 @@
 
 from optparse import make_option, OptionParser
 import sys
+import os
 from GaeApp import GaeApp
 
 option_list = [
@@ -32,6 +33,8 @@ app.load()
 app.connect(debug = options.debug,url=options.url,email = options.email)
 
 print "Connected to %s at %s" % (app.app_id,app.host)
+
+sys.path.append(os.getcwd())
 
 script = __import__(util)
 

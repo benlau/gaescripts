@@ -2,6 +2,7 @@
 from google.appengine.ext import db
 from google.appengine.api import datastore_types
 import datetime
+import time
 
 id_prefix = "_"
 
@@ -63,7 +64,7 @@ def serialize(object):
             entity[prop.name] = (datastore_value.lat,datastore_value.lon)
         elif isinstance(prop,db.UserProperty):
             entity[prop.name] = datastore_value.email()
-        elif isinstance(datastore_value,db.DateTimeProperty):
+        elif isinstance(prop,db.DateTimeProperty):
             entity[prop.name] = time.mktime(datastore_value.timetuple())  
 
     if object.key().id() != None:
