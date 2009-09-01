@@ -69,14 +69,16 @@ class GaeApp:
         """
         Load setting from application root
         """
-        for p in [ "common/.google_appengine" , 
-            "common/.google_appengine/lib"
+        for p in [ 
+            "common/.google_appengine" , 
+            "common/.google_appengine/lib",
+            "common/.google_appengine/lib/yaml/lib",
             "common/google_appengine" , 
             "common/google_appengine/lib" , 
             "common/appenginepatch" ]:
             sys.path.append(self.basepath + "/" +  p)
-        
-        import yaml    
+
+        import yaml
         
         stream = file(self.basepath + "/app.yaml") 
         self.app_id = yaml.load(stream)['application']
